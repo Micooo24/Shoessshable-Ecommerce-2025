@@ -6,7 +6,7 @@ require('dotenv').config();
 
 // App
 const app = express();
-
+const productRoutes = require('./routes/products');
 const authRoutes = require("./routes/auth");
 
 // Mongoose
@@ -22,12 +22,21 @@ mongoose
 const port = process.env.PORT || 8000;
 const ip = process.env.IP || '127.0.0.1';
 
+// Configure Cloudinary with credentials from environment variables
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+
 // Middlewares
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
 // Use the user routes
+app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 
 app.use((req, res, next) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, LinearGradient } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Home = ({ navigation }) => {
@@ -14,14 +14,14 @@ const Home = ({ navigation }) => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[styles.button, styles.loginButton]}
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => navigation.navigate('Auth', { screen: 'Login' })}
         >
           <Text style={styles.buttonText}>LOGIN</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.button, styles.registerButton]}
-          onPress={() => navigation.navigate('Register')}
+          onPress={() => navigation.navigate('Auth', { screen: 'Register' })}
         >
           <Text style={[styles.buttonText, styles.registerButtonText]}>REGISTER</Text>
         </TouchableOpacity>

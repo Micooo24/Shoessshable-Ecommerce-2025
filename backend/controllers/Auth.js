@@ -1,71 +1,78 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
-// const Customer = require("../models/Customer");
 const cloudinary = require('cloudinary').v2;
 const mongoose = require('mongoose');
 const crypto = require('crypto');
-
 
 exports.Register = async function (req, res) {
     const session = await mongoose.startSession(); // Start a session for transaction
     session.startTransaction();
 
     try {
-        const { username, email, password} = req.body;
+        const { username, email, password, firstName, lastName, phoneNumber, address, zipCode, firebaseUid } = req.body;
 
-         // Check if the email is already registered
-         const existingUser = await User.findOne({ email });
-         if (existingUser) {
-             return res.status(400).json({ message: "Email is already in use." });
-         }
+        // Check if the email is already registered
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email is already in use." });
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-              // Create a new User instance
-              const newUser = new User({
-                username,
-                email,
-                password: hashedPassword,
-                role: "customer", // Set role as customer
-                verified: false, // Not verified yet
+        // Upload the profile image to Cloudinary (if any)
+        let profileImage = {};
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'register/users',
+                width: 150,
+                crop: "scale"
             });
 
-            const savedUser = await newUser.save({ session });
+            profileImage = {
+                public_id: result.public_id,
+                url: result.secure_url
+            };
+        } else {
+            profileImage = {
+                public_id: 'default_public_id',
+                url: 'default_url'
+            };
+        }
 
-        //     // Upload the profile image to Cloudinary (if any)
-        // let profileImage = {};
-        // if (req.file) {
-        //     const result = await cloudinary.uploader.upload(req.file.path, {
-        //         folder: 'register/users',
-        //         width: 150,
-        //         crop: "scale"
-        //     });
-
-        //     profileImage = {
-        //         public_id: result.public_id,
-        //         url: result.secure_url
-        //     };
-        // }
-
-          // Commit the transaction
-          await session.commitTransaction();
-          session.endSession();
-
-
-          res.status(201).json({
-            message: "Account has been registered successfully. Please verify your email to activate your account.",
-            user: savedUser,
-
+        // Create a new User instance
+        const newUser = new User({
+            username,
+            email,
+            password: hashedPassword,
+            firstName,
+            lastName,
+            phoneNumber,
+            address,
+            zipCode,
+            profileImage,
+            firebaseUid,
+            role: "user", // Set role as user
+            status: "active", // Set default status as active
         });
 
-        
+        const savedUser = await newUser.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(201).json({
+            message: "Account has been registered successfully. Please verify your email to activate your account.",
+            user: savedUser,
+        });
+
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
         console.error(error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
-}
+};
 
 // Checks if Verified user before sending token
 exports.Login = async function (req, res) {
@@ -73,7 +80,7 @@ exports.Login = async function (req, res) {
     session.startTransaction();
 
     try {
-        const { email, password} = req.body;
+        const { email, password } = req.body;
 
         // Check if email and password are provided
         if (!email || !password) {
@@ -86,33 +93,29 @@ exports.Login = async function (req, res) {
             return res.status(401).json({ message: 'Invalid Email or Password' });
         }
 
-
-
         // Compare the provided password with the hashed password in the database
         const isPasswordMatched = await user.comparePassword(password);
         if (!isPasswordMatched) {
             return res.status(401).json({ message: 'Invalid Email or Password' });
         }
 
-       
         // Generate JWT token
         const token = user.getJwtToken();
 
-     
-        
-         // Commit the transaction
+        // Commit the transaction
         await session.commitTransaction();
         session.endSession();
 
-
-        // Return the token, user information, and customer ID
+        // Return the token and user information
         return res.status(201).json({
             success: true,
             user,
             token,
         });
-        
+
     } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
         console.error(error);
         res.status(500).json({ message: "Server error" });
     }

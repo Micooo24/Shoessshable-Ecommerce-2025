@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -13,13 +12,61 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: [true, 'Please enter your email'],
-        unique: true,
-        validate: [validator.isEmail, 'Please enter valid email address']
+        unique: true
     },
     password: {
         type: String,
-        minlength: [6, 'Your password must be longer than 6 characters'],
         select: false
+    },
+    firstName: {
+        type: String,
+        required: [true, 'First Name is required'],
+        minlength: [2, 'First Name must be at least 2 characters'],
+        maxlength: [50, 'First Name must be less than 50 characters'],
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last Name is required'],
+        minlength: [2, 'Last Name must be at least 2 characters'],
+        maxlength: [50, 'Last Name must be less than 50 characters'],
+    },
+    phoneNumber: {
+        type: Number, 
+        required: [true, 'Phone Number is required'],
+    },
+    address: {
+        type: String,
+        required: [true, 'Address is required'],
+        minlength: [5, 'Address must be at least 5 characters'],
+        maxlength: [100, 'Address must be less than 100 characters'],
+    },
+    zipCode: {
+        type: Number, 
+        required: [true, 'Zip Code is required'],
+    },
+    profileImage: {
+        public_id: {
+            type: String,
+            required: [true, 'Profile image public ID is required']
+        },
+        url: {
+            type: String,
+            required: [true, 'Profile image URL is required'],
+        }
+    },
+    fcmToken: {
+        type: String,
+        required: false,
+    },
+    status: {
+        type: String, 
+        enum: ['active', 'inactive'], 
+        default: 'active'
+    },
+    firebaseUid: {
+        type: String,
+        required: true,
+        unique: true
     },
     role:  {
         type: String, 
